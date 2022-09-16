@@ -1,0 +1,68 @@
+version: '3.9'
+
+services:
+  frontend:
+    build:
+      context: ./udagram-frontend
+      dockerfile: Dockerfile
+
+  api-feed:
+    build:
+      context: ./udagram-api-feed
+      dockerfile: Dockerfile
+    environment:
+      - PORT=${PORT}
+      - POSTGRES_USERNAME=${POSTGRES_USERNAME}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - AWS_BUCKET=${AWS_BUCKET}
+      - AWS_REGION=${AWS_REGION}
+      - AWS_PROFILE=${AWS_PROFILE}
+      - JWT_SECRET=${JWT_SECRET}
+      - URL=${URL}
+    env_file:
+      - udagram-api-feed
+
+  api-user:
+    build:
+      context: ./udagram-api-user
+      dockerfile: Dockerfile
+    environment:
+      - PORT=${USER_PORT}
+      - POSTGRES_USERNAME=${USER_POSTGRES_USERNAME}
+      - POSTGRES_PASSWORD=${USER_POSTGRES_PASSWORD}
+      - POSTGRES_HOST=${USER_POSTGRES_HOST}
+      - POSTGRES_DB=${USER_POSTGRES_DB}
+      - JWT_SECRET=${USER_JWT_SECRET}
+      - URL=${USER_URL}
+    env_file:
+      - udagram-api-user
+
+  pg-feed:
+    image: postgres:14-alpine3.15
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_USER=${DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+    volumes:
+      - pgdatafeed:/var/lib/postgresql/data
+    ports:
+      - 5433:5432
+
+  pg-user:
+    image: postgres:14-alpine3.15
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_USER=${DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
+    volumes:
+      - pgdatauser:/var/lib/postgresql/data
+    ports:
+      - 5434:5432
+
+volumes:
+  pgdatafeed:
+  pgdatauser:
