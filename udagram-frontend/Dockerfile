@@ -10,6 +10,6 @@ RUN npm ci
 COPY . .
 RUN ionic build
 ## Run 
-FROM nginx:alpine
+FROM nginx:1.23.1-alpine
 #COPY www /usr/share/nginx/html
 COPY --from=ionic  /usr/src/app/www /usr/share/nginx/html

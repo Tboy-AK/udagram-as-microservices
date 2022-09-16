@@ -1,0 +1,32 @@
+version: ">= 1.0.0"
+
+language: node_js
+node_js:
+  - 14
+
+services:
+  - docker
+
+# Pre-testing installs
+install:
+  - echo "nothing needs to be installed"
+
+# Scripts to be run such as tests
+before_script:
+  - echo "no tests"
+
+jobs:
+  include:
+    - stage: build
+      script: make build
+    - stage: push
+      script: make push
+    - stage: deploy
+      script: make deploy
+
+stages:
+  - name: build
+  - name: push
+    if: branch = main
+  # - name: deploy
+  #   if: branch = main
