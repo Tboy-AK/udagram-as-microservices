@@ -6,7 +6,7 @@ import { config } from "./config/config";
 import { V0_FEED_MODELS } from "./controllers/v0/model.index";
 
 (async () => {
-    await sequelize.addModels(V0_FEED_MODELS);
+    sequelize.addModels(V0_FEED_MODELS);
 
     console.debug("Initialize database connection...");
     await sequelize.sync();
