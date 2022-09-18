@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import * as winston from "winston";
+import logger from "../../../../config/logger";
 import { v4 as uuid4 } from "uuid";
 import { User } from "../models/User";
 import * as c from "../../../../config/config";
@@ -30,7 +30,7 @@ function generateJWT(user: User): string {
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
     req.headers.request_id = uuid4();
-    winston.info(
+    logger.info(
         `User requesting secure route :: req-${req.headers.request_id}`
     );
 
@@ -58,7 +58,7 @@ router.get(
     "/verification",
     requireAuth,
     async (req: Request, res: Response) => {
-        winston.info(
+        logger.info(
             `User verifying authourised access :: req-${req.headers.request_id}`
         );
         return res.status(200).send({ auth: true, message: "Authenticated." });
@@ -67,20 +67,20 @@ router.get(
 
 router.post("/login", async (req: Request, res: Response) => {
     const reqId = uuid4();
-    winston.info(`User requesting login :: req-${reqId}`);
+    logger.info(`User requesting login :: req-${reqId}`);
 
     const email = req.body.email;
     const password = req.body.password;
 
     if (!email || !EmailValidator.validate(email)) {
-        winston.info(`Failed user login :: req-${reqId}`);
+        logger.info(`Failed user login :: req-${reqId}`);
         return res
             .status(400)
             .send({ auth: false, message: "Email is required or malformed." });
     }
 
     if (!password) {
-        winston.info(`Failed user login :: req-${reqId}`);
+        logger.info(`Failed user login :: req-${reqId}`);
         return res
             .status(400)
             .send({ auth: false, message: "Password is required." });
@@ -88,7 +88,7 @@ router.post("/login", async (req: Request, res: Response) => {
 
     const user = await User.findByPk(email);
     if (!user) {
-        winston.info(`Failed user login :: req-${reqId}`);
+        logger.info(`Failed user login :: req-${reqId}`);
         return res
             .status(401)
             .send({ auth: false, message: "User was not found.." });
@@ -97,7 +97,7 @@ router.post("/login", async (req: Request, res: Response) => {
     const authValid = await comparePasswords(password, user.passwordHash);
 
     if (!authValid) {
-        winston.info(`Failed user login :: req-${reqId}`);
+        logger.info(`Failed user login :: req-${reqId}`);
         return res
             .status(401)
             .send({ auth: false, message: "Password was invalid." });
@@ -109,20 +109,20 @@ router.post("/login", async (req: Request, res: Response) => {
 
 router.post("/", async (req: Request, res: Response) => {
     const reqId = uuid4();
-    winston.info(`User requesting registration :: req-${reqId}`);
+    logger.info(`User requesting registration :: req-${reqId}`);
 
     const email = req.body.email;
     const plainTextPassword = req.body.password;
 
     if (!email || !EmailValidator.validate(email)) {
-        winston.info(`User registration failed. Invalid email :: req-${reqId}`);
+        logger.info(`User registration failed. Invalid email :: req-${reqId}`);
         return res
             .status(400)
             .send({ auth: false, message: "Email is missing or malformed." });
     }
 
     if (!plainTextPassword) {
-        winston.info(
+        logger.info(
             `User registration failed. Invalid password :: req-${reqId}`
         );
         return res
@@ -132,7 +132,7 @@ router.post("/", async (req: Request, res: Response) => {
 
     const user = await User.findByPk(email);
     if (user) {
-        winston.info(
+        logger.info(
             `User registration failed. User already exists :: req-${reqId}`
         );
         return res
@@ -150,7 +150,7 @@ router.post("/", async (req: Request, res: Response) => {
     const savedUser = await newUser.save();
 
     const jwt = generateJWT(savedUser);
-    winston.info(`User registration successful :: req-${reqId}`);
+    logger.info(`User registration successful :: req-${reqId}`);
     res.status(201).send({ token: jwt, user: savedUser.short() });
 });
 

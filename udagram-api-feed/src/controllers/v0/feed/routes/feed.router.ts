@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { FeedItem } from "../models/FeedItem";
 import { NextFunction } from "connect";
 import * as jwt from "jsonwebtoken";
-import * as winston from "winston";
+import logger from "../../../../config/logger";
 import { v4 as uuid4 } from "uuid";
 import * as AWS from "../../../../aws";
 import * as c from "../../../../config/config";
@@ -11,12 +11,12 @@ const router: Router = Router();
 
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
     req.headers.request_id = uuid4();
-    winston.info(
+    logger.info(
         `User requesting secure route :: req-${req.headers.request_id}`
     );
 
     if (!req.headers || !req.headers.authorization) {
-        winston.info(
+        logger.info(
             `User requesting secure route failed. No Authorization header :: req-${req.headers.request_id}`
         );
         return res.status(401).send({ message: "No authorization headers." });
@@ -24,7 +24,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 
     const tokenBearer = req.headers.authorization.split(" ");
     if (tokenBearer.length != 2) {
-        winston.info(
+        logger.info(
             `User requesting secure route failed. Malformed token :: req-${req.headers.request_id}`
         );
         return res.status(401).send({ message: "Malformed token." });
@@ -33,7 +33,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     const token = tokenBearer[1];
     return jwt.verify(token, c.config.jwt.secret, (err) => {
         if (err) {
-            winston.info(
+            logger.info(
                 `User requesting secure route failed. Authentication failed :: req-${req.headers.request_id}`
             );
             return res
@@ -47,7 +47,7 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
 
 // Get all feed items
 router.get("/", async (req: Request, res: Response) => {
-    winston.info(`User requesting all feed items :: req-${uuid4()}`);
+    logger.info(`User requesting all feed items :: req-${uuid4()}`);
     const items = await FeedItem.findAndCountAll({ order: [["id", "DESC"]] });
     items.rows.forEach((item) => {
         if (item.url) {
@@ -59,7 +59,7 @@ router.get("/", async (req: Request, res: Response) => {
 
 // Get a feed resource
 router.get("/:id", async (req: Request, res: Response) => {
-    winston.info(`User requesting a feed resource :: req-${uuid4()}`);
+    logger.info(`User requesting a feed resource :: req-${uuid4()}`);
     const { id } = req.params;
     const item = await FeedItem.findByPk(id);
     res.send(item);
@@ -70,7 +70,7 @@ router.get(
     "/signed-url/:fileName",
     requireAuth,
     async (req: Request, res: Response) => {
-        winston.info(
+        logger.info(
             `System retrieving signed URL for user photo upload :: req-${req.headers.request_id}`
         );
 
@@ -82,7 +82,7 @@ router.get(
 
 // Create feed with metadata
 router.post("/", requireAuth, async (req: Request, res: Response) => {
-    winston.info(
+    logger.info(
         `User requesting to create feed :: req-${req.headers.request_id}`
     );
 
@@ -90,7 +90,7 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
     const fileName = req.body.url; // same as S3 key name
 
     if (!caption) {
-        winston.info(
+        logger.info(
             `User requesting to create feed failed. Invalid caption :: req-${req.headers.request_id}`
         );
         return res
@@ -99,7 +99,7 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
     }
 
     if (!fileName) {
-        winston.info(
+        logger.info(
             `User requesting to create feed failed. No file URL :: req-${req.headers.request_id}`
         );
         return res.status(400).send({ message: "File url is required." });
@@ -114,7 +114,7 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
 
     savedItem.url = AWS.getGetSignedUrl(savedItem.url);
 
-    winston.info(
+    logger.info(
         `User requesting to create feed successful :: req-${req.headers.request_id}`
     );
 
