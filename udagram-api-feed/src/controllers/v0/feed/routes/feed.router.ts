@@ -16,17 +16,26 @@ export function requireAuth(req: Request, res: Response, next: NextFunction) {
     );
 
     if (!req.headers || !req.headers.authorization) {
+        winston.info(
+            `User requesting secure route failed. No Authorization header :: req-${req.headers.request_id}`
+        );
         return res.status(401).send({ message: "No authorization headers." });
     }
 
     const tokenBearer = req.headers.authorization.split(" ");
     if (tokenBearer.length != 2) {
+        winston.info(
+            `User requesting secure route failed. Malformed token :: req-${req.headers.request_id}`
+        );
         return res.status(401).send({ message: "Malformed token." });
     }
 
     const token = tokenBearer[1];
     return jwt.verify(token, c.config.jwt.secret, (err) => {
         if (err) {
+            winston.info(
+                `User requesting secure route failed. Authentication failed :: req-${req.headers.request_id}`
+            );
             return res
                 .status(500)
                 .send({ auth: false, message: "Failed to authenticate." });
@@ -81,12 +90,18 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
     const fileName = req.body.url; // same as S3 key name
 
     if (!caption) {
+        winston.info(
+            `User requesting to create feed failed. Invalid caption :: req-${req.headers.request_id}`
+        );
         return res
             .status(400)
             .send({ message: "Caption is required or malformed." });
     }
 
     if (!fileName) {
+        winston.info(
+            `User requesting to create feed failed. No file URL :: req-${req.headers.request_id}`
+        );
         return res.status(400).send({ message: "File url is required." });
     }
 
@@ -98,6 +113,11 @@ router.post("/", requireAuth, async (req: Request, res: Response) => {
     const savedItem = await item.save();
 
     savedItem.url = AWS.getGetSignedUrl(savedItem.url);
+
+    winston.info(
+        `User requesting to create feed successful :: req-${req.headers.request_id}`
+    );
+
     res.status(201).send(savedItem);
 });
 

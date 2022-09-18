@@ -115,14 +115,16 @@ router.post("/", async (req: Request, res: Response) => {
     const plainTextPassword = req.body.password;
 
     if (!email || !EmailValidator.validate(email)) {
-        winston.info(`User registration failed :: req-${reqId}`);
+        winston.info(`User registration failed. Invalid email :: req-${reqId}`);
         return res
             .status(400)
             .send({ auth: false, message: "Email is missing or malformed." });
     }
 
     if (!plainTextPassword) {
-        winston.info(`User registration failed :: req-${reqId}`);
+        winston.info(
+            `User registration failed. Invalid password :: req-${reqId}`
+        );
         return res
             .status(400)
             .send({ auth: false, message: "Password is required." });
@@ -130,7 +132,9 @@ router.post("/", async (req: Request, res: Response) => {
 
     const user = await User.findByPk(email);
     if (user) {
-        winston.info(`User registration failed :: req-${reqId}`);
+        winston.info(
+            `User registration failed. User already exists :: req-${reqId}`
+        );
         return res
             .status(422)
             .send({ auth: false, message: "User already exists." });
